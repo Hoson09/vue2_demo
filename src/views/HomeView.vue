@@ -20,7 +20,7 @@
               box-size: border-box;
             "
           >
-            {{ row.lifeCycleType }}
+            {{ `${row.lifeCycleType} MVP` }}
           </div>
         </template>
         <template v-else>
@@ -33,7 +33,7 @@
               padding-left: 4px;
             "
           >
-            {{ row.lifeCycleType }}
+            {{ `${row.lifeCycleType} FMVP` }}
           </div>
         </template>
       </template>
