@@ -1,18 +1,14 @@
 <template>
   <div class="home">
-    <img alt="Vue logo" src="../assets/logo.png" />
+    <h1>原生表格组件</h1>
     <tableComponent />
   </div>
 </template>
 
 <script>
 // @ is an alias to /src
-import tableComponent from "@/components/tableComponent.vue";
 
 export default {
   name: "HomeView",
-  components: {
-    tableComponent,
-  },
 };
 </script>
