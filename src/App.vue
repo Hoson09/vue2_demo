@@ -2,7 +2,7 @@
   <div id="app">
     <div style="text-align: center">
       <h1>Vue2Demo</h1>
-      <router-link to="/tableComponent">tableComponent</router-link>
+      <router-link to="/tableComponent">tableComponent</router-link> |
     </div>
     <router-view />
   </div>

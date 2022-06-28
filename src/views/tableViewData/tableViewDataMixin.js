@@ -72,6 +72,18 @@ export const tableViewDataMixin = {
                 innerText: "删除",
               },
             });
+            /*这里也可以用JSX编写的DOM数据，(这个和上面的render函数渲染出来的虚拟DOM是同等的效果)
+            这样就把本来应该写在html的DOM抽出来到JS中，
+            然后也可以对这个自定义组件进行处理。这样exSlot这个组件可以进行最大程度的重用。可以保持html的相对简洁。
+            但是这两种方法都有缺点，JSX在Vue2.0中并不成熟做不了复杂的DOM操作，render函数渲染虚拟DOM无法进行复杂的DOM嵌套操作，
+            所以都不实用，如果遇到复杂的DOM嵌套和复杂的事件操作时，就需要借助v-slot来实现了。*/
+            /* return (<button 
+                style="color: red;fontSize: "14px";background-color: aquamarine;
+                border-radius: 1em;border: 1px solid #000;" 
+                onClick = {()=>this.deleteClick(cell)}>
+                删除
+                </button>)
+             */
           },
         },
       ],
