@@ -23,7 +23,6 @@
                 :class="title[`thClass${i}`]"
                 :colspan="parseInt(title[`colspan${i}`])"
                 :rowspan="parseInt(title[`rowspan${i}`])"
-                class="th-style"
               >
                 <div
                   :class="title[`thDivClass${i}`]"
@@ -42,7 +41,6 @@
                 :key="title.prop + 'th' + i"
                 :class="title[`thClass${i}`]"
                 :colspan="parseInt(title[`colspan${i}`])"
-                class="th-style"
               >
                 <div
                   :class="title[`thDivClass${i}`]"
@@ -61,7 +59,6 @@
                 :key="title.prop + 'th' + i"
                 :class="title[`thClass${i}`]"
                 :rowspan="parseInt(title[`rowspan${i}`])"
-                class="th-style"
               >
                 <div
                   :class="title[`thDivClass${i}`]"
@@ -74,11 +71,7 @@
             <template
               v-else-if="!title[`rowspan${i}`] && !title[`colspan${i}`]"
             >
-              <th
-                :key="title.prop + 'th' + i"
-                :class="title[`thClass${i}`]"
-                class="th-style"
-              >
+              <th :key="title.prop + 'th' + i" :class="title[`thClass${i}`]">
                 <div
                   :class="title[`thDivClass${i}`]"
                   :style="[title[`thDivStyle${i}`]]"
@@ -96,30 +89,35 @@
           :key="index + 'td'"
           height="40px"
         >
-          <td
-            v-for="title in tableTitles"
-            :key="title.prop + 'tbodyTd'"
-            :class="title.tdClass"
-          >
-            <template v-if="title.render">
-              <cusSlot
-                :column="title"
-                :row="data"
-                :index="index"
-                :render="title.render"
-              />
+          <template v-for="title in tableTitles">
+            <!-- 说明有些行要进行合并 -->
+            <template v-if="parseInt(mergeAction(title.prop, index).row)">
+              <td
+                :rowspan="mergeAction(title.prop, index).row"
+                :key="title.prop + 'tbodyTd'"
+                :class="title.tdClass"
+              >
+                <template v-if="title.render">
+                  <cusSlot
+                    :column="title"
+                    :row="data"
+                    :index="index"
+                    :render="title.render"
+                  />
+                </template>
+                <template v-else>
+                  <slot :name="title.prop" :row="data">
+                    <div
+                      :class="title.tdDivClass"
+                      :style="[data[`${title.prop}Style`]]"
+                    >
+                      {{ data[title.prop] }}
+                    </div>
+                  </slot>
+                </template>
+              </td>
             </template>
-            <template v-else>
-              <slot :name="title.prop" :row="data">
-                <div
-                  :class="title.tdDivClass"
-                  :style="[data[`${title.prop}Style`]]"
-                >
-                  {{ data[title.prop] }}
-                </div>
-              </slot>
-            </template>
-          </td>
+          </template>
         </tr>
       </tbody>
     </table>
@@ -167,6 +165,11 @@ export default {
   components: {
     cusSlot,
   },
+  data() {
+    return {
+      needMergeRule: {}, //处理过后得到的每个column的合并规则
+    };
+  },
   props: {
     tableTitles: {
       type: Array,
@@ -180,8 +183,83 @@ export default {
       type: Number,
       default: 1,
     },
+    needMergeArr: {
+      //需要进行行合并的prop 集合
+      type: Array,
+      default: () => [],
+    },
   },
-  methods: {},
+  watch: {
+    tableDatas: {
+      handler(newVal) {
+        if (newVal.length > 0) {
+          this.needMergeRule = this.rowMergeHandle(this.needMergeArr, newVal); // 处理数据
+        }
+      },
+      deep: true,
+      immediate: true,
+    },
+  },
+  methods: {
+    rowMergeHandle(needMergeArr = [], tableData = []) {
+      if (needMergeArr.length === 0) return false;
+      if (tableData.length === 0) return false;
+      let needMerge = {};
+      needMergeArr.forEach((i) => {
+        needMerge[i] = {
+          rowArr: [], //该数组用来记录在目前列中的每一行的cell应该向下合并几行还是应该被合并。如果对应数组的数据==0,则说明该cell应该被合并。
+          rowMergeNum: 0, //用来记录在目前列的第几行的行数，rowNum
+        };
+        tableData.forEach((item, index) => {
+          if (index === 0) {
+            needMerge[i].rowArr.push(1);
+            needMerge[i].rowMergeNum = 0;
+          } else {
+            if (item[i] === tableData[index - 1][i]) {
+              needMerge[i].rowArr[needMerge[i].rowMergeNum] += 1;
+              needMerge[i].rowArr.push(0);
+            } else {
+              needMerge[i].rowArr.push(1);
+              needMerge[i].rowMergeNum = index;
+            }
+          }
+        });
+      });
+      return needMerge;
+    },
+    isMergeRules(needMergeRule) {
+      let ismerge = true;
+      if (
+        Object.prototype.toString.call(needMergeRule).slice(8, -1) ===
+          "Boolean" &&
+        !needMergeRule
+      ) {
+        ismerge = false;
+      } else if (
+        Object.prototype.toString.call(needMergeRule).slice(8, -1) ===
+          "Object" &&
+        JSON.stringify(needMergeRule) === "{}"
+      ) {
+        ismerge = false;
+      }
+      return ismerge;
+    },
+    mergeAction(val, rowIndex) {
+      console.log("needMergeRule", this.needMergeRule);
+      if (
+        !this.isMergeRules(this.needMergeRule) ||
+        !Object.keys(this.needMergeRule).includes(val)
+      ) {
+        return {
+          row: 1,
+          col: 1,
+        };
+      }
+      let _row = this.needMergeRule[val].rowArr[rowIndex];
+      let _col = _row > 0 ? 1 : 0;
+      return { row: _row, col: _col };
+    },
+  },
 };
 </script>
 
@@ -192,11 +270,11 @@ export default {
     border-collapse: collapse;
     border-spacing: 0px; //去除表格一些默认样式
     thead tr th {
-      padding: 7px 20px;
+      padding: 12px 16px;
       box-sizing: border-box;
     }
     tbody tr td {
-      padding: 6px 20px;
+      padding: 12px 16px;
       box-sizing: border-box;
     }
     thead {
@@ -205,24 +283,25 @@ export default {
       tr {
         th {
           position: relative;
-          &.th-style::before {
-            display: block;
-            content: "";
-            height: 30%;
-            width: 1px;
-            position: absolute;
-            background-color: #000;
-            left: 0;
-            top: 50%;
-            transform: translateY(-50%);
-          }
-          &.th-style:first-child::before {
-            display: none;
+          vertical-align: top;
+          &.th-style {
+            &::before {
+              display: block;
+              content: "";
+              height: calc(100% - 24px);
+              width: 1px;
+              position: absolute;
+              background-color: #000;
+              left: 0;
+              top: 50%;
+              transform: translateY(-50%);
+            }
           }
           div {
             font-size: 16px;
             line-height: 1.5;
             text-align: left;
+            min-height: 24px;
           }
         }
       }
