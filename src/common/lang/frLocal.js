@@ -3,4 +3,7 @@ export default {
     hello: "Bonjour",
     lang: "Français",
   },
+  private: {
+    welcome: "Bienvenue.",
+  },
 };

@@ -52,7 +52,9 @@ export default {
   },
   computed: {
     i18nStr() {
-      return `${this.$t("common.lang")}: ${this.$t("common.hello")}`;
+      return `${this.$t("common.lang")}: ${this.$t("common.hello")}, ${this.$t(
+        "private.welcome"
+      )}`;
     },
   },
   methods: {
